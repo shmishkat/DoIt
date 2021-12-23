@@ -1,5 +1,8 @@
 /* eslint-disable no-new */
 /* eslint-disable no-undef */
+// import { autocomplete } from '@algolia/autocomplete-js'
+import * as topbar from 'topbar'
+
 function forEach (elements, handler) {
   elements = elements || []
   for (let i = 0; i < elements.length; i++) handler(elements[i])
@@ -13,10 +16,13 @@ function isMobileWindow () {
   return window.matchMedia('only screen and (max-width: 680px)').matches
 }
 
-function isTocStatic () {
-  return window.matchMedia('only screen and (max-width: 1000px)').matches
-}
-
+/**
+ * Animate the element with AnimateCSS. https://animate.style/
+ * @param {HTMLElement} element The element to animate.
+ * @param {Array} animation The animation selected.
+ * @param {boolean} reserved Whether to execute the callback after the animation is ended.
+ * @param {function} callback The callback gets exectued after the element is animated.
+ */
 function animateCSS (element, animation, reserved, callback) {
   if (!Array.isArray(animation)) animation = [animation]
   element.classList.add('animate__animated', ...animation)
@@ -25,91 +31,97 @@ function animateCSS (element, animation, reserved, callback) {
     element.removeEventListener('animationend', handler)
     if (typeof callback === 'function') callback()
   }
-  if (!reserved) element.addEventListener('animationend', handler, false)
+  if (!reserved) element.addEventListener('animationend', handler)
 }
-
+/**
+ * Fetch and initialize all SVG icons.
+ */
 function initSVGIcon () {
-  forEach(document.querySelectorAll('[data-svg-src]'), $icon => {
-    fetch($icon.getAttribute('data-svg-src'))
+  Array.from(document.querySelectorAll('[data-svg-src]')).forEach(icon => {
+    fetch(icon.getAttribute('data-svg-src'))
       .then(response => response.text())
       .then(svg => {
-        const $temp = document.createElement('div')
-        $temp.insertAdjacentHTML('afterbegin', svg)
-        const $svg = $temp.firstChild
-        $svg.setAttribute('data-svg-src', $icon.getAttribute('data-svg-src'))
-        $svg.classList.add('icon')
-        const $titleElements = $svg.getElementsByTagName('title')
-        if ($titleElements.length) $svg.removeChild($titleElements[0])
-        $icon.parentElement.replaceChild($svg, $icon)
+        const temp = document.createElement('div')
+        temp.insertAdjacentHTML('afterbegin', svg)
+        const dataSvg = temp.firstChild
+        dataSvg.setAttribute('data-svg-src', icon.getAttribute('data-svg-src'))
+        dataSvg.classList.add('icon')
+        const titleElements = dataSvg.getElementsByTagName('title')
+        if (titleElements.length) dataSvg.removeChild(titleElements[0])
+        icon.parentElement.replaceChild(dataSvg, icon)
       })
-      .catch(err => { console.error(err) })
   })
 }
 
-function initTwemoji () {
-  if (window.config.twemoji) twemoji.parse(document.body)
-}
-
+/**
+ * Initialize the mobile menu bar.
+ */
 function initMenuMobile () {
-  const $menuToggleMobile = document.getElementById('menu-toggle-mobile')
-  const $menuMobile = document.getElementById('menu-mobile')
+  const menuToggleMobile = document.getElementById('menu-toggle-mobile')
+  const menuMobile = document.getElementById('menu-mobile')
+  // If no event listener has been registered yet, add one.
   if (!window.menuToggleMobileEventListener) {
-    $menuToggleMobile.addEventListener('click', () => {
+    menuToggleMobile.addEventListener('click', () => {
       document.body.classList.toggle('blur')
-      $menuToggleMobile.classList.toggle('active')
-      $menuMobile.classList.toggle('active')
-    }, false)
+      menuToggleMobile.classList.toggle('active')
+      menuMobile.classList.toggle('active')
+    })
     window.menuToggleMobileEventListener = true
   }
+  // Remove the mask when click on it.
   window._menuMobileOnClickMask = () => {
-    $menuToggleMobile.classList.remove('active')
-    $menuMobile.classList.remove('active')
+    menuToggleMobile.classList.remove('active')
+    menuMobile.classList.remove('active')
   }
   window.clickMaskEventSet.add(window._menuMobileOnClickMask)
 }
 
+/**
+ * Initialize the switch theme button.
+ */
 function initSwitchTheme () {
-  forEach(document.getElementsByClassName('theme-switch'), $themeSwitch => {
-    $themeSwitch.addEventListener('click', () => {
+  Array.from(document.getElementsByClassName('theme-switch')).forEach(themeSwitch => {
+    themeSwitch.addEventListener('click', () => {
       const currentTheme = document.body.getAttribute('theme')
+      function setColorTheme (theme) {
+        document.body.setAttribute('theme', theme)
+        window.localStorage && localStorage.setItem('theme', theme)
+        window.isDark = !(theme === 'light')
+      }
       if (currentTheme === 'dark') {
-        document.body.setAttribute('theme', 'black')
-        window.localStorage && localStorage.setItem('theme', 'black')
-        window.isDark = true
+        setColorTheme('black')
       } else if (currentTheme === 'black') {
-        document.body.setAttribute('theme', 'light')
-        window.localStorage && localStorage.setItem('theme', 'light')
-        window.isDark = false
+        setColorTheme('light')
       } else {
-        document.body.setAttribute('theme', 'dark')
-        window.localStorage && localStorage.setItem('theme', 'dark')
-        window.isDark = true
+        setColorTheme('dark')
       }
       for (const event of window.switchThemeEventSet) event()
-    }, false)
+    })
   })
 }
 
+/**
+ * Initialize the select theme button.
+ */
 function initSelectTheme () {
-  forEach(document.getElementsByClassName('color-theme-select'), $themeSelect => {
+  Array.from(document.getElementsByClassName('color-theme-select')).forEach(themeSelect => {
+    // Get the current theme
     const currentTheme = document.body.getAttribute('theme')
-    for (let j = 0; j < $themeSelect.options.length; j++) {
-      const i = $themeSelect.options[j]
+    // Set the selected Index
+    for (let j = 0; j < themeSelect.options.length; j++) {
+      const i = themeSelect.options[j]
       if (i.value === currentTheme) {
-        $themeSelect.selectedIndex = j
+        themeSelect.selectedIndex = j
         break
       }
     }
-    $themeSelect.addEventListener('change', () => {
-      const theme = $themeSelect.value
+
+    themeSelect.addEventListener('change', () => {
+      const theme = themeSelect.value
       window.localStorage && localStorage.setItem('theme', theme)
       if (theme !== 'auto') {
+        window.isDark = !(theme === 'light')
         document.body.setAttribute('theme', theme)
-        if (theme === 'light') {
-          window.isDark = false
-        } else {
-          window.isDark = true
-        }
       } else {
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
           document.body.setAttribute('theme', 'dark')
@@ -120,15 +132,23 @@ function initSelectTheme () {
         }
       }
       for (const event of window.switchThemeEventSet) event()
-    }, false)
+    })
   })
 }
 
+/**
+ * Initialize the search box.
+ * @returns {null}
+ */
 function initSearch () {
   const searchConfig = window.config.search
-  const isMobile = isMobileWindow()
+  const isMobile = window.matchMedia && window.matchMedia('only screen and (max-width: 680px)').matches
+  // If there is no search config
+  // Or the search has been initialized already
+  // Return directly
   if (!searchConfig || (isMobile && window._searchMobileOnce) || (!isMobile && window._searchDesktopOnce)) return
 
+  // Initialize default search config
   const maxResultLength = searchConfig.maxResultLength ? searchConfig.maxResultLength : 10
   const snippetLength = searchConfig.snippetLength ? searchConfig.snippetLength : 50
   const highlightTag = searchConfig.highlightTag ? searchConfig.highlightTag : 'em'
@@ -142,71 +162,80 @@ function initSearch () {
   const useExtendedSearch = searchConfig.useExtendedSearch ? searchConfig.useExtendedSearch : false
   const ignoreFieldNorm = searchConfig.ignoreFieldNorm ? searchConfig.ignoreFieldNorm : false
   const suffix = isMobile ? 'mobile' : 'desktop'
-  const $header = document.getElementById(`header-${suffix}`)
-  const $searchInput = document.getElementById(`search-input-${suffix}`)
-  const $searchToggle = document.getElementById(`search-toggle-${suffix}`)
-  const $searchLoading = document.getElementById(`search-loading-${suffix}`)
-  const $searchClear = document.getElementById(`search-clear-${suffix}`)
+  const header = document.getElementById(`header-${suffix}`)
+  const searchInput = document.getElementById(`search-input-${suffix}`)
+  const searchToggle = document.getElementById(`search-toggle-${suffix}`)
+  const searchLoading = document.getElementById(`search-loading-${suffix}`)
+  const searchClear = document.getElementById(`search-clear-${suffix}`)
+
   if (isMobile) {
     window._searchMobileOnce = true
-    $searchInput.addEventListener('focus', () => {
+    // Turn on the mask when clicking on the search button
+    searchInput.addEventListener('focus', () => {
       document.body.classList.add('blur')
-      $header.classList.add('open')
-    }, false)
+      header.classList.add('open')
+    })
+    // Turn off the everything when clicking on the cancel button
     document.getElementById('search-cancel-mobile').addEventListener('click', () => {
-      $header.classList.remove('open')
+      header.classList.remove('open')
       document.body.classList.remove('blur')
       document.getElementById('menu-toggle-mobile').classList.remove('active')
       document.getElementById('menu-mobile').classList.remove('active')
-      $searchLoading.style.display = 'none'
-      $searchClear.style.display = 'none'
+      searchLoading.style.display = 'none'
+      searchClear.style.display = 'none'
+      window._searchMobile && window._searchMobile.autocomplete.setVal('')
+    })
+    // Clear the search box when clicking on the clear button
+    searchClear.addEventListener('click', () => {
+      searchClear.style.display = 'none'
       window._searchMobile && window._searchMobile.autocomplete.setVal('')
     }, false)
-    $searchClear.addEventListener('click', () => {
-      $searchClear.style.display = 'none'
-      window._searchMobile && window._searchMobile.autocomplete.setVal('')
-    }, false)
+    // Remove the mask when click on it or pjax:send
     window._searchMobileOnClickMask = () => {
-      $header.classList.remove('open')
-      $searchLoading.style.display = 'none'
-      $searchClear.style.display = 'none'
+      header.classList.remove('open')
+      searchLoading.style.display = 'none'
+      searchClear.style.display = 'none'
       window._searchMobile && window._searchMobile.autocomplete.setVal('')
     }
     window.clickMaskEventSet.add(window._searchMobileOnClickMask)
     window.pjaxSendEventSet.add(window._searchMobileOnClickMask)
   } else {
     window._searchDesktopOnce = true
-
-    $searchToggle.addEventListener('click', () => {
+    // Turn on the mask when clicking on the search button
+    searchToggle.addEventListener('click', () => {
       document.body.classList.add('blur')
-      $header.classList.add('open')
-      $searchInput.focus()
-    }, false)
-    $searchClear.addEventListener('click', () => {
-      $searchClear.style.display = 'none'
+      header.classList.add('open')
+      searchInput.focus()
+    })
+    // Clear the search box when clicking on the clear button
+    searchClear.addEventListener('click', () => {
+      searchClear.style.display = 'none'
       window._searchDesktop && window._searchDesktop.autocomplete.setVal('')
-    }, false)
+    })
     // Toggle search when Ctrl + K is pressed
     document.addEventListener('keydown', e => {
       if (e.ctrlKey && e.code === 'KeyK') {
         e.preventDefault()
-        $searchToggle.click()
+        searchToggle.click()
       }
-    }, false)
+    })
+    // Remove the mask when click on it or pjax:send
     window._searchDesktopOnClickMask = () => {
-      $header.classList.remove('open')
-      $searchLoading.style.display = 'none'
-      $searchClear.style.display = 'none'
+      header.classList.remove('open')
+      searchLoading.style.display = 'none'
+      searchClear.style.display = 'none'
       window._searchDesktop && window._searchDesktop.autocomplete.setVal('')
     }
     window.clickMaskEventSet.add(window._searchDesktopOnClickMask)
     window.pjaxSendEventSet.add(window._searchDesktopOnClickMask)
-    window.pjaxSendEventSet.add(() => { window._searchDesktopOnce = false; window._searchMobileOnce = false })
   }
-  $searchInput.addEventListener('input', () => {
-    if ($searchInput.value === '') $searchClear.style.display = 'none'
-    else $searchClear.style.display = 'inline'
-  }, false)
+  // Reset _searchDesktopOnce when pjax:send
+  window.pjaxSendEventSet.add(() => { window._searchDesktopOnce = false; window._searchMobileOnce = false })
+  // Display the clear button only when the search box is not empty
+  searchInput.addEventListener('input', () => {
+    if (searchInput.value === '') searchClear.style.display = 'none'
+    else searchClear.style.display = 'inline'
+  })
 
   const initAutosearch = () => {
     const autosearch = autocomplete(`#search-input-${suffix}`, {
@@ -219,11 +248,11 @@ function initSearch () {
     }, {
       name: 'search',
       source: (query, callback) => {
-        $searchLoading.style.display = 'inline'
-        $searchClear.style.display = 'none'
+        searchLoading.style.display = 'inline'
+        searchClear.style.display = 'none'
         const finish = (results) => {
-          $searchLoading.style.display = 'none'
-          $searchClear.style.display = 'inline'
+          searchLoading.style.display = 'none'
+          searchClear.style.display = 'inline'
           callback(results)
         }
         if (searchConfig.type === 'lunr') {
@@ -525,124 +554,105 @@ function initHeaderLink () {
 }
 
 function initToc () {
-  const $tocCore = document.getElementById('TableOfContents')
-  if ($tocCore === null) return
-  if (document.getElementById('toc-static').getAttribute('kept') || isTocStatic()) {
-    const $tocContentStatic = document.getElementById('toc-content-static')
-    if ($tocCore.parentElement !== $tocContentStatic) {
-      $tocCore.parentElement.removeChild($tocCore)
-      $tocContentStatic.appendChild($tocCore)
+  const tocCore = document.getElementById('TableOfContents')
+  // Return directly if no toc
+  if (tocCore === null) return
+  const isTocStatic = window.matchMedia && window.matchMedia('only screen and (max-width: 1000px)').matches
+
+  if (document.getElementById('toc-static').getAttribute('kept') || isTocStatic) {
+    const tocContentStatic = document.getElementById('toc-content-static')
+    if (tocCore.parentElement !== tocContentStatic) {
+      tocCore.parentElement.removeChild(tocCore)
+      tocContentStatic.appendChild(tocCore)
     }
     if (window._tocOnScroll) window.scrollEventSet.delete(window._tocOnScroll)
   } else {
-    const $tocContentAuto = document.getElementById('toc-content-auto')
-    if ($tocCore.parentElement !== $tocContentAuto) {
-      $tocCore.parentElement.removeChild($tocCore)
-      $tocContentAuto.appendChild($tocCore)
+    const tocContentAuto = document.getElementById('toc-content-auto')
+    if (tocCore.parentElement !== tocContentAuto) {
+      tocCore.parentElement.removeChild(tocCore)
+      tocContentAuto.appendChild(tocCore)
     }
-    const $toc = document.getElementById('toc-auto')
-    const $page = document.getElementsByClassName('page')[0]
-    const rect = $page.getBoundingClientRect()
-    $toc.style.left = `${rect.left + rect.width + 20}px`
-    $toc.style.maxWidth = `${window.innerWidth - $page.getBoundingClientRect().right - 20}px`
-    $toc.style.visibility = 'visible'
-    const $tocLinkElements = $tocCore.querySelectorAll('a:first-child')
-    const $tocLiElements = $tocCore.getElementsByTagName('li')
-    const $headerLinkElements = document.getElementsByClassName('headerLink')
+    // The toc element
+    const toc = document.getElementById('toc-auto')
+    // The page element
+    const page = document.getElementsByClassName('page')[0]
+    // The rect of the page
+    const rect = page.getBoundingClientRect()
+    // The toc is 20px to the right of the page
+    toc.style.left = `${rect.left + rect.width + 20}px`
+    // The toc occupy all the right of the window
+    toc.style.maxWidth = `${window.innerWidth - rect.right - 20}px`
+    toc.style.visibility = 'visible'
+    const tocLinkElements = tocCore.querySelectorAll('a:first-child')
+    const tocLiElements = tocCore.getElementsByTagName('li')
+    const headerLinkElements = document.getElementsByClassName('headerLink')
     const headerIsFixed = document.body.getAttribute('header-desktop') !== 'normal'
     const headerHeight = document.getElementById('header-desktop').offsetHeight
     const TOP_SPACING = 20 + (headerIsFixed ? headerHeight : 0)
-    const minTocTop = $toc.offsetTop
+    const minTocTop = toc.offsetTop
     const minScrollTop = minTocTop - TOP_SPACING + (headerIsFixed ? 0 : headerHeight)
     window._tocOnScroll = window._tocOnScroll || (() => {
       const footerTop = document.getElementById('post-footer').offsetTop
-      const maxTocTop = footerTop - $toc.getBoundingClientRect().height
+      const maxTocTop = footerTop - toc.getBoundingClientRect().height
       const maxScrollTop = maxTocTop - TOP_SPACING + (headerIsFixed ? 0 : headerHeight)
       if (window.newScrollTop < minScrollTop) {
-        $toc.style.position = 'absolute'
-        $toc.style.top = `${minTocTop}px`
+        // If scroll to the top of the page
+        // Set toc to absolute
+        toc.style.position = 'absolute'
+        toc.style.top = `${minTocTop}px`
       } else if (window.newScrollTop > maxScrollTop) {
-        $toc.style.position = 'absolute'
-        $toc.style.top = `${maxTocTop}px`
+        // If scroll to the bottom of the page
+        // Set toc to absolute
+        toc.style.position = 'absolute'
+        toc.style.top = `${maxTocTop}px`
       } else {
-        $toc.style.position = 'fixed'
-        $toc.style.top = `${TOP_SPACING}px`
+        // If in the middle
+        // Set toc to fixed with TOP_SPACING
+        toc.style.position = 'fixed'
+        toc.style.top = `${TOP_SPACING}px`
       }
-      if ($tocLinkElements.length === 0) return
-      const content = document.getElementById('content')
-      forEach($tocLinkElements, $tocLink => { $tocLink.classList.remove('active') })
-      forEach($tocLiElements, $tocLi => { $tocLi.classList.remove('has-active') })
-      const INDEX_SPACING = 20 + (headerIsFixed ? headerHeight : 0)
+      // Update the active toc link
+      // Return directly if no toc link
+      if (tocLinkElements.length === 0) return
+
       let activeTocIndex = -1
-      if (content.getBoundingClientRect().top <= INDEX_SPACING &&
-                content.getBoundingClientRect().bottom > INDEX_SPACING &&
-                $headerLinkElements[0].getBoundingClientRect().top <= INDEX_SPACING) {
-        if ($headerLinkElements[$headerLinkElements.length - 1].getBoundingClientRect().top < INDEX_SPACING) {
-          activeTocIndex = $headerLinkElements.length - 1
-        } else {
-          for (let i = 0; i < $headerLinkElements.length - 1; i++) {
-            const thisTop = $headerLinkElements[i].getBoundingClientRect().top
-            const nextTop = $headerLinkElements[i + 1].getBoundingClientRect().top
-            if (thisTop <= INDEX_SPACING && nextTop > INDEX_SPACING) {
-              activeTocIndex = i
-              break
-            }
-          }
-        }
-        if (activeTocIndex >= 0 && activeTocIndex < $tocLinkElements.length) {
-          $tocLinkElements[activeTocIndex].classList.add('active')
-          let $parent = $tocLinkElements[activeTocIndex].parentElement
-          while ($parent !== $tocCore) {
-            $parent.classList.add('has-active')
-            $parent = $parent.parentElement.parentElement
+      const INDEX_SPACING = TOP_SPACING + window.newScrollTop
+      // If the INDEX_SPACING is below the last header link
+      // activate the last element
+      if (headerLinkElements[headerLinkElements.length - 1].offsetTop < INDEX_SPACING) {
+        activeTocIndex = headerLinkElements.length - 1
+      } else {
+        // Otherwise activate the element that is in between
+        // Use offsetTop instead of getBoundingClientRect().top for better performance
+        for (let i = 0; i < headerLinkElements.length - 1; i++) {
+          const thisTop = headerLinkElements[i].offsetTop
+          const nextTop = headerLinkElements[i + 1].offsetTop
+          if (thisTop <= INDEX_SPACING && nextTop > INDEX_SPACING) {
+            activeTocIndex = i
+            break
           }
         }
       }
-      history.replaceState(history.state, null, activeTocIndex === -1 ? ' ' : $tocLinkElements[activeTocIndex].href)
+      // Remove all legacy states
+      Array.from(tocLinkElements).forEach(tocLink => tocLink.classList.remove('active'))
+      Array.from(tocLiElements).forEach(tocLi => tocLi.classList.remove('has-active'))
+
+      // Set the tocLinkElement to active
+      // and all its parent to has-active
+      if (activeTocIndex >= 0 && activeTocIndex < tocLinkElements.length) {
+        tocLinkElements[activeTocIndex].classList.add('active')
+        let parent = tocLinkElements[activeTocIndex].parentElement
+        while (parent !== tocCore) {
+          parent.classList.add('has-active')
+          parent = parent.parentElement.parentElement
+        }
+      }
+      // Update the broswer history
+      if (activeTocIndex !== -1) history.replaceState(history.state, null, tocLinkElements[activeTocIndex].href)
     })
     window._tocOnScroll()
     window.scrollEventSet.add(window._tocOnScroll)
   }
-}
-
-function initMath () {
-  if (window.config.math) renderMathInElement(document.body, window.config.math)
-}
-
-function initMermaid () {
-  const $mermaidElements = document.getElementsByClassName('mermaid')
-  if ($mermaidElements.length) {
-    mermaid.initialize({ startOnLoad: false, theme: 'default' })
-    forEach($mermaidElements, $mermaid => {
-      mermaid.mermaidAPI.render('svg-' + $mermaid.id, window.data[$mermaid.id], svgCode => {
-        $mermaid.insertAdjacentHTML('afterbegin', svgCode)
-        document.getElementById('svg-' + $mermaid.id).children[0].remove()
-      }, $mermaid)
-    })
-  }
-}
-
-function initEcharts () {
-  window._echartsOnSwitchTheme = () => {
-    window._echartsArr = window._echartsArr || []
-    for (let i = 0; i < window._echartsArr.length; i++) {
-      window._echartsArr[i].dispose()
-    }
-    window._echartsArr = []
-    forEach(document.getElementsByClassName('echarts'), $echarts => {
-      const chart = echarts.init($echarts, window.isDark ? 'dark' : 'macarons', { renderer: 'svg' })
-      chart.setOption(JSON.parse(window.data[$echarts.id]))
-      window._echartsArr.push(chart)
-    })
-  }
-  window.switchThemeEventSet.add(window._echartsOnSwitchTheme)
-  window._echartsOnSwitchTheme()
-  window._echartsOnResize = () => {
-    for (let i = 0; i < window._echartsArr.length; i++) {
-      window._echartsArr[i].resize()
-    }
-  }
-  window.resizeEventSet.add(window._echartsOnResize)
 }
 
 function initMapbox () {
@@ -651,7 +661,7 @@ function initMapbox () {
     mapboxgl.setRTLTextPlugin(window.config.mapbox.RTLTextPlugin)
     window._mapboxArr = window._mapboxArr || []
     forEach(document.getElementsByClassName('mapbox'), $mapbox => {
-      const { lng, lat, zoom, lightStyle, darkStyle, marked, navigation, geolocate, scale, fullscreen } = window.data[$mapbox.id]
+      const { lng, lat, zoom, lightStyle, darkStyle, marked, navigation, geolocate, scale, fullscreen } = window.config.data[$mapbox.id]
       const mapbox = new mapboxgl.Map({
         container: $mapbox,
         center: [lng, lat],
@@ -687,7 +697,7 @@ function initMapbox () {
     window._mapboxOnSwitchTheme = () => {
       forEach(window._mapboxArr, mapbox => {
         const $mapbox = mapbox.getContainer()
-        const { lightStyle, darkStyle } = window.data[$mapbox.id]
+        const { lightStyle, darkStyle } = window.config.data[$mapbox.id]
         mapbox.setStyle(window.isDark ? darkStyle : lightStyle)
         mapbox.addControl(new MapboxLanguage())
       })
@@ -707,7 +717,7 @@ function initTypeit () {
         const id = group[i]
         if (!document.getElementById(id).hasAttribute('data-typeit-id')) {
           const instance = new TypeIt(`#${id}`, {
-            strings: window.data[id],
+            strings: window.config.data[id],
             speed: speed,
             lifeLike: true,
             cursorSpeed: cursorSpeed,
@@ -733,136 +743,6 @@ function initTypeit () {
   }
 }
 
-function initComment () {
-  if (window.config.comment) {
-    if (window.config.comment.gitalk) {
-      window.config.comment.gitalk.body = decodeURI(window.location.href)
-      const gitalk = new Gitalk(window.config.comment.gitalk)
-      gitalk.render('gitalk')
-    }
-    if (window.config.comment.valine) new Valine(window.config.comment.valine)
-    if (window.config.comment.waline) new Waline(window.config.comment.waline)
-    if (window.config.comment.twikoo) {
-      twikoo.init(window.config.comment.twikoo)
-      if (window.config.comment.twikoo.commentCount) {
-        twikoo.getCommentsCount({
-          envId: window.config.comment.twikoo.envId,
-          region: window.config.comment.twikoo.region,
-          urls: [
-            window.location.pathname
-          ],
-          includeReply: false
-        }).then(function (res) {
-          // example: [
-          //   { url: '/2020/10/post-1.html', count: 10 },
-          //   { url: '/2020/11/post-2.html', count: 0 },
-          //   { url: '/2020/12/post-3.html', count: 20 }
-          // ]
-          // If there is an element with id="twikoo-comment-count", set its innerHTML to the count of comments
-          const $twikooCommentCount = document.getElementById('twikoo-comment-count')
-          if ($twikooCommentCount) $twikooCommentCount.innerHTML = res[0].count
-        }).catch(function (err) {
-          console.error(err)
-        })
-      }
-    }
-    if (window.config.comment.utterances) {
-      const utterancesConfig = window.config.comment.utterances
-      const script = document.createElement('script')
-      script.src = 'https://utteranc.es/client.js'
-      script.type = 'text/javascript'
-      script.setAttribute('repo', utterancesConfig.repo)
-      script.setAttribute('issue-term', utterancesConfig.issueTerm)
-      if (utterancesConfig.label) script.setAttribute('label', utterancesConfig.label)
-      script.setAttribute('theme', window.isDark ? utterancesConfig.darkTheme : utterancesConfig.lightTheme)
-      script.crossOrigin = 'anonymous'
-      script.async = true
-      document.getElementById('utterances').appendChild(script)
-      window._utterancesOnSwitchTheme = () => {
-        const message = {
-          type: 'set-theme',
-          theme: window.isDark ? utterancesConfig.darkTheme : utterancesConfig.lightTheme
-        }
-        const iframe = document.querySelector('.utterances-frame')
-        iframe.contentWindow.postMessage(message, 'https://utteranc.es')
-      }
-      window.switchThemeEventSet.add(window._utterancesOnSwitchTheme)
-    }
-    if (window.config.comment.vssue) {
-      const vssue = window.config.comment.vssue
-      new Vue({
-        el: vssue.el,
-        render: h => h('Vssue', {
-          props: {
-            title: vssue.title,
-            options: {
-              owner: vssue.owner,
-              repo: vssue.repo,
-              clientId: vssue.clientId,
-              clientSecret: vssue.clientSecret
-            }
-          }
-        })
-      })
-    }
-    if (window.config.comment.remark42) {
-      const remark42 = window.config.comment.remark42
-      // eslint-disable-next-line camelcase
-      const remark_config = {
-        host: remark42.host,
-        site_id: remark42.site_id,
-        components: ['embed'],
-        max_shown_comments: remark42.max_shown_comments,
-        theme: window.isDark ? 'dark' : 'light',
-        locale: remark42.locale,
-        show_email_subscription: remark42.show_email_subscription,
-        simple_view: remark42.simple_view
-      }
-      // eslint-disable-next-line camelcase
-      window.remark_config = remark_config
-      // eslint-disable-next-line no-sequences, no-unused-expressions
-      !(function (e, n) { for (let o = 0; o < e.length; o++) { const r = n.createElement('script'); let c = '.js'; const d = n.head || n.body; 'noModule' in r ? (r.type = 'module', c = '.mjs') : r.async = !0, r.defer = !0, r.src = remark_config.host + '/web/' + e[o] + c, d.appendChild(r) } }(remark_config.components || ['embed'], document))
-      window._remark42OnSwitchTheme = () => {
-        if (window.isDark) {
-          window.REMARK42.changeTheme('dark')
-        } else {
-          window.REMARK42.changeTheme('light')
-        }
-      }
-      window.switchThemeEventSet.add(window._remark42OnSwitchTheme)
-    }
-    if (window.config.comment.giscus) {
-      const giscusConfig = window.config.comment.giscus
-      const script = document.createElement('script')
-      script.src = 'https://giscus.app/client.js'
-      script.type = 'text/javascript'
-      script.setAttribute('data-repo', giscusConfig.dataRepo)
-      script.setAttribute('data-repo-id', giscusConfig.dataRepoId)
-      if (giscusConfig.dataCategory) script.setAttribute('data-category', giscusConfig.dataCategory)
-      script.setAttribute('data-category-id', giscusConfig.dataCategoryId)
-      script.setAttribute('data-mapping', giscusConfig.dataMapping)
-      script.setAttribute('data-reactions-enabled', giscusConfig.dataReactionsEnabled)
-      script.setAttribute('data-emit-metadata', giscusConfig.dataEmitMetadata)
-      script.setAttribute('data-theme', window.isDark ? giscusConfig.darkTheme : giscusConfig.lightTheme)
-      script.crossOrigin = 'anonymous'
-      script.async = true
-      document.getElementById('giscus').appendChild(script)
-      window._giscusOnSwitchTheme = () => {
-        const message = {
-          giscus: {
-            setConfig: {
-              theme: window.isDark ? giscusConfig.darkTheme : giscusConfig.lightTheme
-            }
-          }
-        }
-        const iframe = document.querySelector('.giscus-frame')
-        iframe.contentWindow.postMessage(message, 'https://giscus.app')
-      }
-      window.switchThemeEventSet.add(window._giscusOnSwitchTheme)
-    }
-  }
-}
-
 function initMeta () {
   function getMeta (metaName) {
     const metas = document.getElementsByTagName('meta')
@@ -883,17 +763,6 @@ function initMeta () {
   }
   window.switchThemeEventSet.add(window._metaThemeColorOnSwitchTheme)
   window._metaThemeColorOnSwitchTheme()
-}
-
-function initCookieconsent () {
-  if (window.config.cookieconsent) {
-    const container = document.getElementById('cookieconsent-container')
-    // if there is nothing in the container, then init the cookieconsent
-    if (container.innerHTML === '') {
-      window.config.cookieconsent.container = container
-      cookieconsent.initialise(window.config.cookieconsent)
-    }
-  };
 }
 
 function onScroll () {
@@ -954,7 +823,6 @@ function onResize () {
         window._resizeTimeout = null
         for (const event of window.resizeEventSet) event()
         initToc()
-        initMermaid()
         initSearch()
       }, 100)
     }
@@ -969,7 +837,6 @@ function onClickMask () {
 }
 
 function init () {
-  window.data = window.config.data
   window.isDark = document.body.getAttribute('theme') !== 'light'
   window.newScrollTop = getScrollTop()
   window.oldScrollTop = window.newScrollTop
@@ -980,7 +847,6 @@ function init () {
   window.pjaxSendEventSet = new Set()
   if (window.objectFitImages) objectFitImages()
   initSVGIcon()
-  initTwemoji()
   initMenuMobile()
   initSwitchTheme()
   initSelectTheme()
@@ -991,14 +857,9 @@ function init () {
   initHighlight()
   initTable()
   initHeaderLink()
-  initMath()
-  initMermaid()
-  initEcharts()
   initTypeit()
   initMapbox()
-  initCookieconsent()
   initToc()
-  initComment()
   onScroll()
   onResize()
   onClickMask()
@@ -1022,7 +883,8 @@ new Pjax({
     '.pjax-assets',
     '#fixed-buttons',
     '.search-dropdown'
-  ]
+  ],
+  scrollTo: false
 })
 
 document.addEventListener('pjax:success', function () {
@@ -1038,6 +900,7 @@ document.addEventListener('pjax:send', function () {
   if (el) {
     window.lgData[el?.getAttribute('lg-uid')].destroy(true)
   }
+  window.scroll(0, 0)
 })
 
 topbar.config({

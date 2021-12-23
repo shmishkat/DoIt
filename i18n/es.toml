@@ -30,7 +30,17 @@ other = "Categoría"
 
 [categories]
 other = "Categorías"
+
+[series]
+other = "Series"
 # === Taxonomy ===
+
+# === Section ===
+
+[recentlyUpdated]
+other = "Recientemente Actualizado"
+
+# === Section ===
 
 # === Pagination ===
 [more]
@@ -46,8 +56,14 @@ other = "Cambia el tema"
 # === partials/header.html ===
 
 # === partials/footer.html ===
-[poweredBySome]
-other = "Provisto por {{ .Hugo }} | Tema - {{ .Theme }}"
+[poweredBy]
+other = "Provisto por {{ .Hugo }}"
+
+[hostedOn]
+other = "Alejado en {{ .Host }}"
+
+[theme]
+other = "Tema - {{ .Theme }}"
 # === partials/footer.html ===
 
 # === partials/comment.html ===
@@ -108,8 +124,17 @@ other = "Contenido"
 [publishedOnDate]
 other = "publicado el {{ .Date }}"
 
+[includedIn]
+other = "Incluido en "
+
+[includedInAnd]
+other = "y"
+
 [includedInCategories]
 other = "incluido en {{ .Categories }}"
+
+[includedInSeries]
+other = "series {{ .Series }}"
 
 [wordCount]
 one = "Una palabra"
@@ -122,6 +147,9 @@ other = "{{ .Count }} minutos"
 [views]
 other = "vistas"
 
+[comments]
+other = "comentarios"
+
 [author]
 other = "Autor"
 
@@ -131,6 +159,15 @@ other = "Actualizado el {{ .Date }}"
 [readMarkdown]
 other = "Leer Markdown"
 
+[viewSource]
+other = "Ver fuente"
+
+[editThisPage]
+other = "Editar esta página"
+
+[reportThisPage]
+other = "Reportar problema"
+
 [back]
 other = "Regresar"
 
@@ -139,6 +176,12 @@ other = "Inicio"
 
 [readMore]
 other = "Leer más"
+
+[outdatedInfoWarningBefore]
+other = "Este artículo se actualizó por última vez el "
+
+[outdatedInfoWarningAfter]
+other = ", el contenido puede estar desactualizado."
 # === posts/single.html ===
 
 # === 404.html ===

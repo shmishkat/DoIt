@@ -68,8 +68,14 @@ other = "跟随系统"
 # === partials/header.html ===
 
 # === partials/footer.html ===
-[poweredBySome]
-other = "由 {{ .Hugo }} 强力驱动 | 主题 - {{ .Theme }}"
+[poweredBy]
+other = "由 {{ .Hugo }} 强力驱动"
+
+[hostedOn]
+other = "托管在 {{ .Host }} 上"
+
+[theme]
+other = "主题 - {{ .Theme }}"
 # === partials/footer.html ===
 
 # === partials/comment.html ===
@@ -166,8 +172,14 @@ other = "更新于 {{ .Date }}"
 [readMarkdown]
 other = "阅读原始文档"
 
+[viewSource]
+other = "查看源代码"
+
 [editThisPage]
 other = "编辑此页"
+
+[reportThisPage]
+other = "报告问题"
 
 [back]
 other = "返回"
