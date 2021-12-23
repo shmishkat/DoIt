@@ -117,7 +117,7 @@ enableEmoji = true
         weight = 9
     [languages.en.params]
       # site description
-      description = "The official documentation for the Hugo DoIt theme"
+      description = "Sarowar Hossain's Portfolio"
       # site keywords
       keywords = ["Theme", "Hugo"]
       # App icon config
@@ -174,7 +174,7 @@ enableEmoji = true
           # Gravatar Email for preferred avatar in home page
           gravatarEmail = ""
           # URL of avatar shown in home page
-          # avatarURL = "/images/avatar.webp"
+          avatarURL = "/images/avatar.webp"
           # title shown in home page (HTML format is supported)
           title = ""
           # subtitle shown in home page
