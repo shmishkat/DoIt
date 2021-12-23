@@ -1,6 +1,6 @@
 # 001: Github
 github:
-  Weight: 1
+  Weight: 50
   Prefix: https://github.com/
   Title: GitHub
   Icon:
@@ -10,7 +10,7 @@ github:
 linkedin:
   Weight: 2
   Prefix: https://linkedin.com/in/
-  Title: LinkedIn
+  Title: LinkedIn Profile
   Icon:
     Class: fab fa-linkedin fa-fw
 
@@ -50,7 +50,7 @@ telegram:
 medium:
   Weight: 7
   Prefix: https://medium.com/
-  Title: Medium
+  Title: Medium | My Medium Blogs
   Icon:
     Class: fab fa-medium fa-fw
 
@@ -328,7 +328,7 @@ strava:
 
 # 042: Skype
 skype:
-  Weight: 42
+  Weight: 78
   Template: "skype:"
   Title: Skype
   Icon:
@@ -338,7 +338,7 @@ skype:
 whatsapp:
   Weight: 43
   Prefix: https://wa.me/
-  Title: WhatsApp
+  Title: WhatsApp | Text Me Directly
   Icon:
     Class: fab fa-whatsapp fa-fw
 
@@ -392,9 +392,9 @@ deviantart:
 
 # 050: Behance
 behance:
-  Weight: 50
+  Weight: 1
   Prefix: https://behance.net/
-  Title: Behance
+  Title: Behance | My UX Case Studies
   Icon:
     Class: fab fa-behance fa-fw
 
@@ -553,7 +553,7 @@ qqgroup:
 email:
   Weight: 70
   Template: mailto:%v
-  Title: Email
+  Title: Email | For Any UX Queries
   Icon:
     Class: far fa-envelope fa-fw
 
@@ -565,3 +565,13 @@ rss:
   Newtab: true
   Icon:
     Class: fas fa-rss fa-fw
+    
+# 070: Pocket
+pocket:
+  Weight: 42
+  Prefix: https://getpocket.com/
+  Title: Pocket | UX Articles I Recommend
+  Icon:
+    Class: fab fa-get-pocket fa-fw
+    
+
